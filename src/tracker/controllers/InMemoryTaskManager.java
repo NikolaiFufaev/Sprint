@@ -5,6 +5,8 @@ import tracker.model.*;
 import java.util.List;
 import java.util.*;
 
+
+
 import static tracker.model.TaskType.*;
 
 public class InMemoryTaskManager implements TaskManager {
@@ -12,21 +14,36 @@ public class InMemoryTaskManager implements TaskManager {
     protected final HistoryManager historyList;
     protected final Map<Integer, Task> taskMap = new HashMap<>();
 
+    protected SortedSet<Task> taskTreeSet = new TreeSet(new MyComparator());
+
+
     public InMemoryTaskManager(HistoryManager historyList) {
         this.historyList = historyList;
     }
 
+
+
     @Override
     public void createTask(Task task) {
+        if (task == null){return;}
+      try {for (Task task1: taskMap.values()){
+            if (task.getStartTime().equals(task1.getStartTime())){
+                throw new ExceptionTwinDate("Дата уже занята");
+            }
+       }}catch (ExceptionTwinDate e){
+          e.getMessage();
+      }
         task.setId(id);
         taskMap.put(id++, task);
         switch (task.getType()) {
             case TASK:
+                taskTreeSet.add(task);
                 break;
 
             case SUBTASK:
                 Subtask subtask = (Subtask) task;
                 ((Epic) getById(subtask.getEpicId())).addSubTask(subtask.getId());
+                taskTreeSet.add(subtask);
                 break;
 
             case EPIC:
@@ -59,12 +76,14 @@ public class InMemoryTaskManager implements TaskManager {
             for (Subtask sub : subtasks) {
                 historyList.remove(sub);
                 taskMap.remove(sub.getId());
+                taskTreeSet.remove(sub);
             }
             taskMap.remove(id);
             historyList.remove(dell);
         } else {
             taskMap.remove(id);
             historyList.remove(dell);
+            taskTreeSet.remove(dell);
         }
     }
 
@@ -113,6 +132,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public void updateTask(Task newTask, Task oldTask) {
         taskMap.put(oldTask.getId(), newTask);
+        taskTreeSet.add(newTask);
     }
 
     @Override
@@ -142,6 +162,7 @@ public class InMemoryTaskManager implements TaskManager {
         } else {
             epic.setStatus(Status.IN_PROGRESS);
         }
+        taskTreeSet.add(newTask);
     }
 
     @Override
@@ -159,6 +180,16 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
 
+    public SortedSet<Task> getPrioritizedTasks(){
+       return taskTreeSet;
+
+    }
 }
 
-
+class MyComparator implements Comparator<Task>{
+    @Override
+    public int compare(Task o1,Task o2){
+        if (o1.getId() == o2.getId()){return 0;}
+    return o1.getStartTime().compareTo(o2.getStartTime());
+    }
+}

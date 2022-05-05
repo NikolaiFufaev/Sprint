@@ -4,13 +4,14 @@ import tracker.controllers.*;
 
 public class Main {
     public static void main(String[] args) {
-        HistoryManager historyManager = Managers.getDefaultHistory();
-        TaskManager taskManager = Managers.getDefault(historyManager);
+        InMemoryHistoryManager historyManager =(InMemoryHistoryManager) Managers.getDefaultHistory();
+        InMemoryTaskManager taskManager =(InMemoryTaskManager) Managers.getDefault(historyManager);
 
 
         Task task = new Task("First tracker.Task", "description");
         taskManager.createTask(task);
-
+        task.setStartTime("21.10.2021 00:00");
+        taskManager.update(task);
         Task secondTask = new Task("Second tracker.Task", "description");
         taskManager.createTask(secondTask);
 
@@ -45,5 +46,8 @@ public class Main {
         taskManager.clearById(epic.getId());
         System.out.println(taskManager.getTasks());
         System.out.println(historyManager.getHistory());
+
+
+
     }
 }

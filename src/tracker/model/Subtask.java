@@ -1,5 +1,7 @@
 package tracker.model;
 
+
+
 public class Subtask extends Task {
 
     public int getEpicId() {
@@ -21,12 +23,14 @@ public class Subtask extends Task {
 
     @Override
     public String toString() {
-        return "tracker.model.Subtask{" +
-                "id=" + id +
+        return "Subtask{" +
+                "epicId=" + epicId +
+                ", id=" + id +
                 ", title='" + title + '\'' +
                 ", description='" + description + '\'' +
                 ", status=" + status +
-                ", epicId=" + epicId +
+                ", startTime=" + startTime +
+                ", duration=" + duration +
                 '}';
     }
 }

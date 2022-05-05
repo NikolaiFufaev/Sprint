@@ -2,13 +2,17 @@ package tracker.controllers;
 
 import tracker.model.*;
 
-import java.io.File;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.ZoneId;
+
+import static java.lang.System.*;
 
 
 public class FileBackedTasksManager extends InMemoryTaskManager {
@@ -45,7 +49,7 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
         return byId;
     }
 
-    private void save() {
+     public void save() {
         try {
             Writer fileWriter = new FileWriter("save.txt");
             for (Task task : taskMap.values()) {
@@ -62,38 +66,45 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
     }
 
 
-    static String toString(Task task) {
+     String toString(Task task) {
 
         if (task.getType() == TaskType.TASK) {
-            return String.format("%d,%s,%s,%s,%s",
+            return String.format("%d,%s,%s,%s,%s,%d,%d",
                     task.getId(),
                     task.getType(),
                     task.getTitle(),
                     task.getStatus(),
-                    task.getDescription());
+                    task.getDescription(),
+                    task.getStartTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                    task.getDuration());
         } else if (task.getType() == TaskType.EPIC) {
             Epic epic = (Epic) task;
-            return String.format("%d,%s,%s,%s,%s",
+            return String.format("%d,%s,%s,%s,%s,%d,%d",
                     epic.getId(),
                     epic.getType(),
                     epic.getTitle(),
                     epic.getStatus(),
-                    epic.getDescription());
+                    epic.getDescription(),
+                    epic.getStartTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                    epic.getDuration()
+            );
         } else if (task.getType() == TaskType.SUBTASK) {
             Subtask subtask = (Subtask) task;
-            return String.format("%d,%s,%s,%s,%s,%d",
+            return String.format("%d,%s,%s,%s,%s,%d,%d,%d",
                     subtask.getId(),
                     subtask.getType(),
                     subtask.getTitle(),
                     subtask.getStatus(),
                     subtask.getDescription(),
-                    subtask.getEpicId());
+                    subtask.getEpicId(),
+                    subtask.getStartTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()  ,
+                    subtask.getDuration());
         }
         return null;
     }
 
-    static Task fromString(String value) {
-
+     static Task fromString(String value) {
+        if(value.isEmpty()){return null;}
         String[] item = value.split(",");
         TaskType type = TaskType.valueOf(item[1]);
         switch (type) {
@@ -116,7 +127,7 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
         return null;
     }
 
-    static FileBackedTasksManager loadFromFile(Path file) {
+     public static FileBackedTasksManager loadFromFile(Path file) {
         HistoryManager historyManager = Managers.getDefaultHistory();
         FileBackedTasksManager fileBackedTasksManager = new FileBackedTasksManager(historyManager);
         try {
@@ -134,7 +145,7 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
         return fileBackedTasksManager;
     }
 
-    static Path fileBack() {
+     public static Path fileBack() {
         Path uniPath = Paths.get("").toAbsolutePath();
         Path fileBacked = Paths.get(uniPath + "\\save.txt");
         return fileBacked;
@@ -147,21 +158,26 @@ public class FileBackedTasksManager extends InMemoryTaskManager {
 
         Task task = new Task("First tracker.Task", "description");
         taskManager.createTask(task);
-
+        task.setStartTime("20.03.2100 10:00");
+        taskManager.update(task);
+        task.setStatus(Status.IN_PROGRESS);
+        taskManager.update(task);
         Epic epic = new Epic("First tracker.Epic", "description");
         taskManager.createTask(epic);
 
         Subtask subtask = new Subtask("First tracker.Subtask", "description", epic.getId());
         taskManager.createTask(subtask);
-
-
+        subtask.setStartTime("21.10.2000 00:00");
+        taskManager.update(subtask);
         taskManager.getById(task.getId());
 
         taskManager.getById(epic.getId());
-        System.out.println(taskManager.getTasks());
-        System.out.println(historyManager.getHistory());
+        out.println(taskManager.getTasks());
+        out.println(historyManager.getHistory());
+        out.println(taskManager.getPrioritizedTasks());
+        out.println(loadFromFile(fileBack()).getTasks());
 
-        System.out.println(loadFromFile(fileBack()).getTasks());
+
     }
 }
 
